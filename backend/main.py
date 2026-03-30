@@ -209,6 +209,26 @@ async def cluster_data(
         df_csv.to_csv(csv_buffer, index=False)
         encoded_csv = base64.b64encode(csv_buffer.getvalue().encode('utf-8')).decode('utf-8')
         
+        # 7. Generate Individual Cluster Data (Rows & specific CSVs)
+        cluster_data = {}
+        for cluster_id in range(k):
+            # Safe text coercion for dictionary keys
+            cid_str = str(cluster_id)
+            # Filter the dataframe for this specific cluster
+            cluster_df = df_csv[df["Cluster"] == cluster_id]
+            
+            # Keep top 100 rows for preview to prevent massive payload sizes
+            preview_rows = cluster_df.head(100).fillna("").to_dict(orient='records')
+            
+            # Generate the isolated CSV base64 just for this segment
+            c_csv_buffer = io.StringIO()
+            cluster_df.to_csv(c_csv_buffer, index=False)
+            c_encoded_csv = base64.b64encode(c_csv_buffer.getvalue().encode('utf-8')).decode('utf-8')
+            
+            cluster_data[cid_str] = {
+                "rows": preview_rows,
+                "csv": c_encoded_csv
+            }
         
         return {
             "plotData": {
@@ -218,7 +238,8 @@ async def cluster_data(
                 "yLabel": y_label
             },
             "insights": insights,
-            "downloadCSV_base64": encoded_csv
+            "downloadCSV_base64": encoded_csv,
+            "clusterData": cluster_data
         }
         
     except Exception as e:

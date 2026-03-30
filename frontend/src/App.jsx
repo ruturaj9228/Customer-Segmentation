@@ -8,6 +8,7 @@ import DataPreview from './components/DataPreview';
 import ConfigurationPanel from './components/ConfigurationPanel';
 import ClusterVisualization from './components/ClusterVisualization';
 import InsightsCards from './components/InsightsCards';
+import ClusterDetailTable from './components/ClusterDetailTable';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -20,6 +21,8 @@ function App() {
   const [plotData, setPlotData] = useState(null);
   const [insights, setInsights] = useState(null);
   const [downloadCsv, setDownloadCsv] = useState(null);
+  const [clusterDataMap, setClusterDataMap] = useState(null);
+  const [selectedCluster, setSelectedCluster] = useState(null);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -30,6 +33,8 @@ function App() {
     setError(null);
     setPlotData(null);
     setInsights(null);
+    setClusterDataMap(null);
+    setSelectedCluster(null);
     setSelectedColumns([]);
     
     // Create form data
@@ -77,6 +82,8 @@ function App() {
       setPlotData(response.data.plotData);
       setInsights(response.data.insights);
       setDownloadCsv(response.data.downloadCSV_base64);
+      setClusterDataMap(response.data.clusterData);
+      setSelectedCluster(null);
       
       // Scroll to results slightly later to allow render
       setTimeout(() => {
@@ -225,10 +232,32 @@ function App() {
               </h2>
               
               <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-                <InsightsCards insights={insights} selectedColumns={selectedColumns} />
+                <InsightsCards 
+                  insights={insights} 
+                  selectedColumns={selectedColumns} 
+                  selectedCluster={selectedCluster}
+                  onSelectCluster={(cid) => {
+                      setSelectedCluster(cid === selectedCluster ? null : cid);
+                      setTimeout(() => {
+                          document.getElementById('detail-table-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                  }}
+                />
               </div>
+
+              <AnimatePresence>
+                {selectedCluster && clusterDataMap && clusterDataMap[selectedCluster] && (
+                  <div id="detail-table-section">
+                    <ClusterDetailTable 
+                      clusterLabel={insights.find(i => String(i.cluster) === selectedCluster)?.label || `Cluster ${selectedCluster}`}
+                      clusterIdx={selectedCluster}
+                      data={clusterDataMap[selectedCluster]} 
+                    />
+                  </div>
+                )}
+              </AnimatePresence>
               
-              <div className="glass-panel animate-float-delayed" style={{ padding: '24px', minHeight: '500px' }}>
+              <div className="glass-panel animate-float-delayed mt-8" style={{ padding: '24px', minHeight: '500px' }}>
                  <ClusterVisualization plotData={plotData} />
               </div>
             </motion.section>
