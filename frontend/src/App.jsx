@@ -45,9 +45,11 @@ function App() {
       console.log("Upload success:", response.data);
 
       // update your states
-      setPreviewData(response.data.preview);
-      setColumns(response.data.columns);
-      setNumericColumns(response.data.numericColumns);
+      setPreviewData(response.data);
+      // Automatically select all numeric columns initially
+      if (response.data.numericColumns && response.data.numericColumns.length > 0) {
+        setSelectedColumns(response.data.numericColumns);
+      }
 
     } catch (error) {
       console.error("Upload error:", error);
